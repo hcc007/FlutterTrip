@@ -1,0 +1,128 @@
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+apply plugin: 'com.android.application'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+
+android {
+    compileSdkVersion 28
+
+    lintOptions {
+        disable 'InvalidPackage'
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId "com.wkl.flutter_trip"
+        minSdkVersion 16
+        targetSdkVersion 28
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+
+
+    signingConfigs {
+        release {
+            try {
+                storeFile file("./keystore/hcc.jks")
+                storePassword "hcc007"
+                keyAlias "hcc"
+                keyPassword "hcc007"
+            } catch (ex) {
+                throw new InvalidUserDataException(ex.toString())
+            }
+        }
+
+        debug {
+            storeFile file("./keystore/debug.keystore")
+        }
+
+    }
+
+    buildTypes {
+        release {
+            //   minifyEnabled true
+            signingConfig signingConfigs.release
+            //  proguardFiles getDefaultProguardFile('proguard-android.txt'), project.file('proguard-rules.pro')
+
+            // 混淆开关
+            minifyEnabled true
+            // 是否zip对齐
+            zipAlignEnabled true
+            // 移除无用的resource文件
+            shrinkResources true
+            // 是否打开debuggable开关
+            debuggable false
+            // 是否打开jniDebuggable开关
+            jniDebuggable false
+            // 混淆配置文件
+            proguardFile 'proguard-rules.pro'
+            //
+//
+            ndk {
+                abiFilters 'armeabi-v7a' //, 'armeabi-v7a', 'x86_64', 'arm64-v8a', 'mips', 'mips64'
+            }
+        }
+        debug {
+            debuggable true
+            minifyEnabled false
+            signingConfig signingConfigs.release
+
+            ndk {
+                abiFilters 'armeabi' , 'armeabi-v7a', 'x86_64', 'arm64-v8a', 'mips', 'mips64'
+            }
+        }
+    }
+
+
+
+
+    //百度语音集成添加
+    packagingOptions {
+        // 确保app与asr_plugin都依赖的libflutter.so merge时不冲突@https://github.com/card-io/card.io-Android-SDK/issues/186#issuecomment-427552552
+        pickFirst 'lib/x86_64/libflutter.so'
+        pickFirst 'lib/x86/libflutter.so'
+        pickFirst 'lib/arm64-v8a/libflutter.so'
+        pickFirst 'lib/arm64-v8a/libapp.so'
+        pickFirst 'lib/armeabi-v7a/libapp.so'
+    }
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
+    implementation 'com.android.support:support-compat:28.0.0'
+    implementation project(path: ':asr_plugin')
+    implementation 'com.umeng.umsdk:common:2.0.0'
+    implementation 'com.umeng.umsdk:utdid:1.1.5.3'
+    implementation 'com.umeng.umsdk:analytics:8.0.0'
+    implementation 'com.umeng.umsdk:push:5.0.2'
+}
